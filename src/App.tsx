@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 
 type LetterState = 'green' | 'yellow' | 'gray'
 
@@ -36,6 +36,7 @@ function App() {
   )
   const [gameOver, setGameOver] = useState(false)
   const [message, setMessage] = useState('Type a 5-letter word and press Enter.')
+  const inputRefs = useRef<Array<Array<HTMLInputElement | null>>>([])
 
   const getLetterStates = (guess: string, target: string): LetterState[] => {
     const states: LetterState[] = Array(5).fill('gray')
@@ -75,9 +76,7 @@ function App() {
     setMessage('New game started. Good luck!')
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
+  const submitGuess = () => {
     if (gameOver) return
 
     const normalizedGuess = currentGuess.trim().toLowerCase()
@@ -116,6 +115,42 @@ function App() {
     setCurrentGuess('')
     setCurrentRow((row) => row + 1)
     setMessage('Try another word.')
+  }
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    submitGuess()
+  }
+
+  const handleTileChange = (rowIndex: number, cellIndex: number, value: string) => {
+    if (rowIndex !== currentRow || gameOver) return
+
+    const cleanedValue = value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 1)
+    const nextGuess = currentGuess.padEnd(5, '').split('')
+    nextGuess[cellIndex] = cleanedValue
+    const updatedGuess = nextGuess.join('').slice(0, 5)
+
+    setCurrentGuess(updatedGuess)
+
+    if (cleanedValue && cellIndex < 4) {
+      inputRefs.current[rowIndex][cellIndex + 1]?.focus()
+    }
+  }
+
+  const handleTileKeyDown = (rowIndex: number, cellIndex: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !currentGuess[cellIndex] && cellIndex > 0) {
+      event.preventDefault()
+      const nextGuess = currentGuess.padEnd(5, '').split('')
+      nextGuess[cellIndex - 1] = ''
+      setCurrentGuess(nextGuess.join('').slice(0, 5))
+      inputRefs.current[rowIndex][cellIndex - 1]?.focus()
+      return
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      submitGuess()
+    }
   }
 
   return (
@@ -177,6 +212,15 @@ function App() {
           font-weight: 700;
           font-size: 1.2rem;
           text-transform: uppercase;
+          text-align: center;
+          padding: 0;
+          color: #f9fafb;
+          outline: none;
+        }
+
+        .tile:disabled {
+          opacity: 1;
+          cursor: default;
         }
 
         .tile.green {
@@ -198,18 +242,7 @@ function App() {
         form {
           margin-top: 20px;
           display: flex;
-          gap: 8px;
-        }
-
-        input {
-          width: 220px;
-          padding: 12px 14px;
-          border: 1px solid #6b7280;
-          border-radius: 10px;
-          background: #111827;
-          color: #f9fafb;
-          font-size: 1rem;
-          outline: none;
+          justify-content: center;
         }
 
         button {
@@ -245,7 +278,7 @@ function App() {
 
       <div className="board">
         {Array.from({ length: 6 }, (_, rowIndex) => {
-          const guess = guesses[rowIndex] ?? ''
+          const guess = rowIndex === currentRow ? currentGuess : (guesses[rowIndex] ?? '')
           const states = feedback[rowIndex] ?? []
 
           return (
@@ -254,11 +287,27 @@ function App() {
                 const letter = guess[cellIndex] ?? ''
                 const state = states[cellIndex] ?? ''
                 const className = `tile ${state}`.trim()
+                const isEditable = rowIndex === currentRow && !gameOver
 
                 return (
-                  <div className={className} key={cellIndex}>
-                    {letter.toUpperCase()}
-                  </div>
+                  <input
+                    ref={(element) => {
+                      if (!inputRefs.current[rowIndex]) {
+                        inputRefs.current[rowIndex] = []
+                      }
+                      inputRefs.current[rowIndex][cellIndex] = element
+                    }}
+                    className={className}
+                    key={cellIndex}
+                    value={letter.toUpperCase()}
+                    onChange={(event) => handleTileChange(rowIndex, cellIndex, event.target.value)}
+                    onKeyDown={(event) => handleTileKeyDown(rowIndex, cellIndex, event)}
+                    maxLength={1}
+                    disabled={!isEditable}
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-label={`Letter ${cellIndex + 1} of row ${rowIndex + 1}`}
+                  />
                 )
               })}
             </div>
@@ -267,19 +316,6 @@ function App() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={currentGuess}
-          onChange={(event) =>
-            setCurrentGuess(
-              event.target.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 5)
-            )
-          }
-          maxLength={5}
-          placeholder="Enter a word"
-          disabled={gameOver}
-          autoFocus
-        />
         <button type="submit" disabled={gameOver}>
           Guess
         </button>
