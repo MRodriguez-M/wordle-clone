@@ -26,6 +26,12 @@ const WORD_LIST = [
 
 const pickWord = () => WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]
 
+const KEYBOARD_LAYOUT = [
+  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+  ['enter', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace'],
+]
+
 function App() {
   const [targetWord, setTargetWord] = useState(() => pickWord())
   const [guesses, setGuesses] = useState<string[]>(Array(6).fill(''))
@@ -63,6 +69,32 @@ function App() {
     }
 
     return states
+  }
+
+  const handleKeyboardInput = (key: string) => {
+    if (gameOver) return
+
+    if (key === 'enter') {
+      submitGuess()
+      return
+    }
+
+    if (key === 'backspace') {
+      if (!currentGuess) return
+
+      const updatedGuess = currentGuess.slice(0, -1)
+      setCurrentGuess(updatedGuess)
+      const nextIndex = Math.max(0, updatedGuess.length)
+      inputRefs.current[currentRow][nextIndex]?.focus()
+      return
+    }
+
+    if (currentGuess.length >= 5) return
+
+    const updatedGuess = `${currentGuess}${key.toLowerCase()}`
+    setCurrentGuess(updatedGuess)
+    const nextIndex = updatedGuess.length
+    inputRefs.current[currentRow][nextIndex]?.focus()
   }
 
   const resetGame = () => {
@@ -267,6 +299,42 @@ function App() {
           font-weight: 600;
         }
 
+        .keyboard {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 16px;
+          width: min(100%, 560px);
+        }
+
+        .keyboard-row {
+          display: flex;
+          justify-content: center;
+          gap: 6px;
+        }
+
+        .keyboard-key {
+          min-width: 38px;
+          padding: 10px 8px;
+          border: none;
+          border-radius: 8px;
+          background: #4b5563;
+          color: #f9fafb;
+          font-weight: 700;
+          font-size: 0.95rem;
+          cursor: pointer;
+          text-transform: uppercase;
+        }
+
+        .keyboard-key.wide {
+          min-width: 68px;
+        }
+
+        .keyboard-key:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
         .reset {
           margin-top: 12px;
           background: #374151;
@@ -320,6 +388,30 @@ function App() {
           Guess
         </button>
       </form>
+
+      <div className="keyboard" aria-label="On-screen keyboard">
+        {KEYBOARD_LAYOUT.map((row, rowIndex) => (
+          <div className="keyboard-row" key={`keyboard-row-${rowIndex}`}>
+            {row.map((key) => {
+              const isWide = key === 'enter' || key === 'backspace'
+              const label = key === 'enter' ? 'Enter' : key === 'backspace' ? '⌫' : key.toUpperCase()
+              const isDisabled = gameOver || (key.length === 1 && currentGuess.length >= 5)
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`keyboard-key${isWide ? ' wide' : ''}`}
+                  onClick={() => handleKeyboardInput(key)}
+                  disabled={isDisabled || (key === 'backspace' && !currentGuess)}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
 
       <p className="message">{message}</p>
       <button type="button" className="reset" onClick={resetGame}>
