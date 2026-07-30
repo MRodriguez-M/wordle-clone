@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 type LetterState = 'green' | 'yellow' | 'gray'
 
@@ -169,6 +169,34 @@ function App() {
     }
   }
 
+  const keyboardStates = useMemo(() => {
+    const stateMap = new Map<string, LetterState>()
+
+    guesses.forEach((guess, rowIndex) => {
+      if (!guess) return
+
+      const states = feedback[rowIndex] ?? []
+
+      guess.split('').forEach((letter, letterIndex) => {
+        const state = states[letterIndex]
+        const currentState = stateMap.get(letter)
+
+        if (!currentState) {
+          stateMap.set(letter, state)
+          return
+        }
+
+        if (currentState === 'gray' && state !== 'gray') {
+          stateMap.set(letter, state)
+        } else if (currentState === 'yellow' && state === 'green') {
+          stateMap.set(letter, state)
+        }
+      })
+    })
+
+    return stateMap
+  }, [feedback, guesses])
+
   const handleTileKeyDown = (rowIndex: number, cellIndex: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Backspace' && !currentGuess[cellIndex] && cellIndex > 0) {
       event.preventDefault()
@@ -335,6 +363,21 @@ function App() {
           cursor: not-allowed;
         }
 
+        .keyboard-key.green {
+          background: #4caf50;
+          color: #fff;
+        }
+
+        .keyboard-key.yellow {
+          background: #f5b700;
+          color: #111827;
+        }
+
+        .keyboard-key.gray {
+          background: #374151;
+          color: #f9fafb;
+        }
+
         .reset {
           margin-top: 12px;
           background: #374151;
@@ -396,12 +439,14 @@ function App() {
               const isWide = key === 'enter' || key === 'backspace'
               const label = key === 'enter' ? 'Enter' : key === 'backspace' ? '⌫' : key.toUpperCase()
               const isDisabled = gameOver || (key.length === 1 && currentGuess.length >= 5)
+              const keyState = key.length === 1 ? keyboardStates.get(key) : ''
+              const stateClass = keyState ? ` ${keyState}` : ''
 
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`keyboard-key${isWide ? ' wide' : ''}`}
+                  className={`keyboard-key${isWide ? ' wide' : ''}${stateClass}`}
                   onClick={() => handleKeyboardInput(key)}
                   disabled={isDisabled || (key === 'backspace' && !currentGuess)}
                 >
