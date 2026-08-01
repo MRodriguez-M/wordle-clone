@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 type LetterState = 'green' | 'yellow' | 'gray'
 
@@ -70,6 +70,20 @@ function App() {
 
     return states
   }
+
+  useEffect(() => {
+    if (gameOver) return
+
+    const activeRow = inputRefs.current[currentRow]
+    if (!activeRow) return
+
+    const nextIndex = Math.min(currentGuess.length, 4)
+    const targetInput = activeRow[nextIndex]
+
+    if (targetInput && document.activeElement !== targetInput) {
+      targetInput.focus()
+    }
+  }, [currentGuess, currentRow, gameOver])
 
   const handleKeyboardInput = (key: string) => {
     if (gameOver) return
