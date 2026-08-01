@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type LetterState = 'green' | 'yellow' | 'gray'
 
@@ -161,11 +161,6 @@ function App() {
     setCurrentGuess('')
     setCurrentRow((row) => row + 1)
     setMessage('Try another word.')
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    submitGuess()
   }
 
   const handleTileChange = (rowIndex: number, cellIndex: number, value: string) => {
@@ -439,12 +434,6 @@ function App() {
           )
         })}
       </div>
-
-      <form onSubmit={handleSubmit}>
-        <button type="submit" disabled={gameOver}>
-          Guess
-        </button>
-      </form>
 
       <div className="keyboard" aria-label="On-screen keyboard">
         {KEYBOARD_LAYOUT.map((row, rowIndex) => (
