@@ -223,190 +223,26 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <style>{`
-        :root {
-          color-scheme: dark;
-          font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-8 text-slate-100">
+      <h1 className="mb-2 text-3xl font-semibold tracking-tight sm:text-4xl">Wordle Clone</h1>
+      <p className="mb-5 text-sm text-slate-300 sm:text-base">Guess the 5-letter word in 6 tries.</p>
 
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          background: #111827;
-          color: #f9fafb;
-        }
-
-        .app {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          background: linear-gradient(135deg, #111827, #1f2937);
-        }
-
-        .title {
-          margin: 0 0 8px;
-          font-size: 2rem;
-        }
-
-        .subtitle {
-          margin: 0 0 20px;
-          color: #d1d5db;
-        }
-
-        .board {
-          display: grid;
-          gap: 8px;
-        }
-
-        .row {
-          display: grid;
-          grid-template-columns: repeat(5, 52px);
-          gap: 8px;
-        }
-
-        .tile {
-          width: 52px;
-          height: 52px;
-          display: grid;
-          place-items: center;
-          border: 2px solid #4b5563;
-          background: #111827;
-          font-weight: 700;
-          font-size: 1.2rem;
-          text-transform: uppercase;
-          text-align: center;
-          padding: 0;
-          color: #f9fafb;
-          outline: none;
-        }
-
-        .tile:disabled {
-          opacity: 1;
-          cursor: default;
-        }
-
-        .tile.green {
-          background: #4caf50;
-          border-color: #4caf50;
-        }
-
-        .tile.yellow {
-          background: #f5b700;
-          border-color: #f5b700;
-          color: #111827;
-        }
-
-        .tile.gray {
-          background: #374151;
-          border-color: #374151;
-        }
-
-        form {
-          margin-top: 20px;
-          display: flex;
-          justify-content: center;
-        }
-
-        button {
-          padding: 12px 16px;
-          border: none;
-          border-radius: 10px;
-          background: #60a5fa;
-          color: #fff;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .message {
-          min-height: 24px;
-          margin-top: 12px;
-          color: #fbbf24;
-          font-weight: 600;
-        }
-
-        .keyboard {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 16px;
-          width: min(100%, 560px);
-        }
-
-        .keyboard-row {
-          display: flex;
-          justify-content: center;
-          gap: 6px;
-        }
-
-        .keyboard-key {
-          min-width: 38px;
-          padding: 10px 8px;
-          border: none;
-          border-radius: 8px;
-          background: #4b5563;
-          color: #f9fafb;
-          font-weight: 700;
-          font-size: 0.95rem;
-          cursor: pointer;
-          text-transform: uppercase;
-        }
-
-        .keyboard-key.wide {
-          min-width: 68px;
-        }
-
-        .keyboard-key:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .keyboard-key.green {
-          background: #4caf50;
-          color: #fff;
-        }
-
-        .keyboard-key.yellow {
-          background: #f5b700;
-          color: #111827;
-        }
-
-        .keyboard-key.gray {
-          background: #374151;
-          color: #f9fafb;
-        }
-
-        .reset {
-          margin-top: 12px;
-          background: #374151;
-        }
-      `}</style>
-
-      <h1 className="title">Wordle Clone</h1>
-      <p className="subtitle">Guess the 5-letter word in 6 tries.</p>
-
-      <div className="board">
+      <div className="grid gap-2">
         {Array.from({ length: 6 }, (_, rowIndex) => {
           const guess = rowIndex === currentRow ? currentGuess : (guesses[rowIndex] ?? '')
           const states = feedback[rowIndex] ?? []
 
           return (
-            <div className="row" key={rowIndex}>
+            <div className="grid grid-cols-5 gap-2" key={rowIndex}>
               {Array.from({ length: 5 }, (_, cellIndex) => {
                 const letter = guess[cellIndex] ?? ''
                 const state = states[cellIndex] ?? ''
-                const className = `tile ${state}`.trim()
+                const tileClasses = {
+                  green: 'border-emerald-500 bg-emerald-500 text-white',
+                  yellow: 'border-amber-400 bg-amber-400 text-white',
+                  gray: 'border-slate-600 bg-slate-700 text-slate-100',
+                  '': 'border-slate-500 bg-slate-950 text-slate-100',
+                }[state as LetterState | '']
                 const isEditable = rowIndex === currentRow && !gameOver
 
                 return (
@@ -417,7 +253,7 @@ function App() {
                       }
                       inputRefs.current[rowIndex][cellIndex] = element
                     }}
-                    className={className}
+                    className={`flex h-13 w-13 items-center justify-center border-2 text-center text-lg font-bold uppercase outline-none disabled:cursor-default disabled:opacity-100 sm:h-14 sm:w-14 sm:text-xl ${tileClasses}`}
                     key={cellIndex}
                     value={letter.toUpperCase()}
                     onChange={(event) => handleTileChange(rowIndex, cellIndex, event.target.value)}
@@ -435,21 +271,26 @@ function App() {
         })}
       </div>
 
-      <div className="keyboard" aria-label="On-screen keyboard">
+      <div className="mt-4 flex w-full max-w-xl flex-col gap-2" aria-label="On-screen keyboard">
         {KEYBOARD_LAYOUT.map((row, rowIndex) => (
-          <div className="keyboard-row" key={`keyboard-row-${rowIndex}`}>
+          <div className="flex justify-center gap-2" key={`keyboard-row-${rowIndex}`}>
             {row.map((key) => {
               const isWide = key === 'enter' || key === 'backspace'
               const label = key === 'enter' ? 'Enter' : key === 'backspace' ? '⌫' : key.toUpperCase()
               const isDisabled = gameOver || (key.length === 1 && currentGuess.length >= 5)
-              const keyState = key.length === 1 ? keyboardStates.get(key) : ''
-              const stateClass = keyState ? ` ${keyState}` : ''
+              const keyState = key.length === 1 ? (keyboardStates.get(key) ?? '') : ''
+              const stateClasses = {
+                green: 'bg-emerald-500 text-white',
+                yellow: 'bg-amber-400 text-white',
+                gray: 'bg-slate-700 text-slate-100',
+                '': 'bg-slate-500 text-white',
+              }[keyState as LetterState | '']
 
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`keyboard-key${isWide ? ' wide' : ''}${stateClass}`}
+                  className={`rounded-lg px-3 py-2.5 text-sm font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-60 ${isWide ? 'min-w-[4.25rem]' : 'min-w-[2.25rem]'} ${stateClasses}`}
                   onClick={() => handleKeyboardInput(key)}
                   disabled={isDisabled || (key === 'backspace' && !currentGuess)}
                 >
@@ -461,8 +302,12 @@ function App() {
         ))}
       </div>
 
-      <p className="message">{message}</p>
-      <button type="button" className="reset" onClick={resetGame}>
+      <p className="mt-3 min-h-6 font-semibold text-amber-400">{message}</p>
+      <button
+        type="button"
+        className="mt-3 rounded-xl bg-slate-700 px-4 py-2 font-semibold text-slate-100 transition hover:bg-slate-600"
+        onClick={resetGame}
+      >
         New Game
       </button>
     </div>
